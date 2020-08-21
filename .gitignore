@@ -1,0 +1,15 @@
+venv
+templates
+.idea
+secrets.json
+db.sqlite3
+twitterclonebackend/templates
+__pycache__/
+*.py[cod]
+.log
+twitterclonebackend/__pycache__/
+user/__pycache__/
+user/migrations/__pycache__/
+/media
+tweet/__pycache__/
+tweet/migrations/__pycache__/
