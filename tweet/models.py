@@ -8,6 +8,11 @@ class Tweet(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False,
                             unique=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(get_user_model(),
+                             related_name='tweets',
+                             on_delete=models.CASCADE,
+                             null=True,
+                             blank=True)
 
     likes = models.ManyToManyField(get_user_model(),
                                    through='LikeConnector',
@@ -23,8 +28,18 @@ class Tweet(models.Model):
         return str(self.uuid)
 
     @property
+    def number_of_likes(self):
+        return len(self.likes.all())
+
+    @property
+    def number_of_shares(self):
+        return len(self.shares.all())
+
+    @property
     def number_of_comments(self):
         return len(self.comments.all())
+
+
 
 
 
@@ -55,3 +70,5 @@ class CommentConnector(models.Model):
     comment_content = models.CharField(max_length=280, blank=False)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.comment_content
