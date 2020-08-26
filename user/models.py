@@ -60,6 +60,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     objects = UserManager()
 
+    def __str__(self):
+        return self.username
+
+    @property
+    def num_of_following(self):
+        return len(self.following.all())
+
+    @property
+    def num_of_followers(self):
+        return len(self.followers.all())
+
 
 class ContactConnector(models.Model):
     user_from = models.ForeignKey(User,
