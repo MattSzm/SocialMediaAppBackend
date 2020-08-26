@@ -7,7 +7,8 @@ class Tweet(models.Model):
     content = models.CharField(max_length=280, blank=False)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False,
                             unique=True, db_index=True)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True,
+                                   db_index=True)
     user = models.ForeignKey(get_user_model(),
                              related_name='tweets',
                              on_delete=models.CASCADE,
@@ -23,6 +24,9 @@ class Tweet(models.Model):
     comments = models.ManyToManyField(get_user_model(),
                                       through='CommentConnector',
                                       related_name='commented_tweets')
+
+    class Meta:
+        ordering = ('-created',)
 
     def __str__(self):
         return str(self.uuid)
@@ -40,9 +44,6 @@ class Tweet(models.Model):
         return len(self.comments.all())
 
 
-
-
-
 class LikeConnector(models.Model):
     account = models.ForeignKey(get_user_model(),
                                 related_name='like_connector_account',
@@ -50,6 +51,7 @@ class LikeConnector(models.Model):
     tweet = models.ForeignKey(Tweet,
                               related_name='like_connector_tweet',
                               on_delete=models.CASCADE)
+
 
 class ShareConnector(models.Model):
     account = models.ForeignKey(get_user_model(),
@@ -60,6 +62,10 @@ class ShareConnector(models.Model):
                               on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ('-created',)
+
+
 class CommentConnector(models.Model):
     account = models.ForeignKey(get_user_model(),
                                 related_name='comment_connector_account',
@@ -69,6 +75,9 @@ class CommentConnector(models.Model):
                               on_delete=models.CASCADE)
     comment_content = models.CharField(max_length=280, blank=False)
     created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created',)
 
     def __str__(self):
         return self.comment_content

@@ -49,9 +49,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    following = models.ManyToManyField('self',
+                                       through='ContactConnector',
+                                       related_name='followers',
+                                       symmetrical=False)
+
     class Meta:
         db_table = 'user'
 
     USERNAME_FIELD = 'email'
     objects = UserManager()
 
+
+class ContactConnector(models.Model):
+    user_from = models.ForeignKey(User,
+                                  related_name='rel_from_set',
+                                  on_delete=models.CASCADE)
+    user_to = models.ForeignKey(User,
+                                related_name='rel_to_set',
+                                on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True,
+                                   db_index=True)
+
+    class Meta:
+        ordering = ('-created',)
+
+    def __str__(self):
+        return f'{self.user_from} follows {self.user_to}'
