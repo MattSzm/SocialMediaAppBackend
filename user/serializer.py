@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import User
 
+
 class UserSerializer(serializers.ModelSerializer):
     number_following = serializers.ReadOnlyField(source='num_of_following')
     number_followers = serializers.ReadOnlyField(source='num_of_followers')
