@@ -12,8 +12,8 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = ('id', 'content', 'uuid', 'created', 'user', 'number_likes',
-                  'number_shares', 'number_comments')
+        fields = ('id', 'content', 'uuid', 'created', 'user', 'image',
+                  'number_likes', 'number_shares', 'number_comments')
 
 
 class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):

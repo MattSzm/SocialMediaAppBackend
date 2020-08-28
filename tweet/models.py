@@ -14,6 +14,8 @@ class Tweet(models.Model):
                              on_delete=models.CASCADE,
                              null=True,
                              blank=True)
+    image = models.ImageField(upload_to='tweets/',
+                              blank=True, null=True)
 
     likes = models.ManyToManyField(get_user_model(),
                                    through='LikeConnector',
