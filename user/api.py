@@ -48,3 +48,4 @@ class CurrentUser(RetrieveUpdateDestroyAPIView):
         return self.request.user
 
 
+#todo: create follow/unfollow endpoints

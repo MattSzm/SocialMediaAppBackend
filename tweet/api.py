@@ -1,27 +1,126 @@
 from rest_framework import generics
 from rest_framework import permissions
-from tweet.serializer import TweetSerializer, TweetCommentSerializer
+from tweet import serializer
 from rest_framework import status
 from rest_framework.response import Response
 from itertools import chain
 from operator import attrgetter
-from user.models import User
 from tweet.models import Tweet, LikeConnector, ShareConnector
 from django.http import Http404
+from . import actions
+from collections import namedtuple
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+
+
+class NewsFeed(generics.GenericAPIView):
+    serializer_class = serializer.NewsFeedSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = ''
+    NewsFeedContent = namedtuple('NewsFeedContent',
+                                 ('tweets', 'shares',
+                                  'oldest_tweet_date',
+                                  'oldest_share_tweet'))
+    size_of_newsfeed = 2
+
+    def get_following_tweets(self, following_users, date_lt=timezone.now()):
+        following_tweets = []
+        if type(date_lt) == str:
+            date_lt = parse_datetime(date_lt)
+        for user in following_users:
+            user_tweets = user.tweets.filter(created__lt=date_lt)
+            following_tweets.extend(user_tweets)
+        return following_tweets
+
+    def get_following_shares(self, following_users, date_lt=timezone.now()):
+        following_shares = []
+        if type(date_lt) == str:
+            date_lt = parse_datetime(date_lt)
+        for user in following_users:
+            user_shares = user.share_connector_account.filter(created__lt=date_lt)
+            following_shares.extend(user_shares)
+        return following_shares
+
+    def sort_set(self, set):
+        return sorted(set,
+                      key=attrgetter('created'),
+                      reverse=True)
+
+    def get(self, request, *args, **kwargs):
+        following_users = request.user.following.all()
+        following_tweets = self.get_following_tweets(following_users)
+        following_tweets.extend(request.user.tweets.all())
+        following_tweets = self.sort_set(following_tweets)
+
+        following_tweets = following_tweets[:self.size_of_newsfeed]
+        following_tweets_date = timezone.now()
+        for tweet in following_tweets:
+            if tweet and tweet.created < following_tweets_date:
+                following_tweets_date = tweet.created
+
+        following_shares = self.get_following_shares(following_users)
+        following_shares.extend(request.user.share_connector_account.all())
+        following_shares = self.sort_set(following_shares)
+
+        following_shares = following_shares[:self.size_of_newsfeed // 2]
+        following_shares_date = timezone.now()
+        for share in following_shares:
+            if share and share.created < following_shares_date:
+                following_shares_date = share.created
+
+        news_feed = self.NewsFeedContent(
+            tweets=following_tweets,
+            shares=following_shares,
+            oldest_tweet_date=following_tweets_date,
+            oldest_share_tweet=following_shares_date
+        )
+        serializer = self.get_serializer(news_feed,
+                                         context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+
+        following_users = request.user.following.all()
+        following_tweets = self.get_following_tweets(following_users, serializer.data['oldest_tweet_date'])
+        following_tweets.extend(request.user.tweets.filter(created__lt=parse_datetime(serializer.data['oldest_tweet_date'])))
+        following_tweets = self.sort_set(following_tweets)
+
+        following_tweets = following_tweets[:self.size_of_newsfeed]
+        following_tweets_date = parse_datetime(serializer.data['oldest_tweet_date'])
+        for tweet in following_tweets:
+            if tweet and tweet.created < following_tweets_date:
+                following_tweets_date = tweet.created
+
+        following_shares = self.get_following_shares(following_users, serializer.data['oldest_share_tweet'])
+        following_shares.extend(request.user.share_connector_account.filter(created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
+        following_shares = self.sort_set(following_shares)
+
+        following_shares = following_shares[:self.size_of_newsfeed // 2]
+        following_shares_date = parse_datetime(serializer.data['oldest_share_tweet'])
+        for shared_tweet in following_shares:
+            if shared_tweet and shared_tweet.created < following_shares_date:
+                following_shares_date = shared_tweet.created
+
+        news_feed = self.NewsFeedContent(
+            tweets=following_tweets,
+            shares=following_shares,
+            oldest_tweet_date=following_tweets_date,
+            oldest_share_tweet=following_shares_date
+        )
+        serializer = self.get_serializer(news_feed,
+                                         context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserTweets(generics.ListAPIView):
-    serializer_class = TweetSerializer
+    serializer_class = serializer.TweetSerializer
     queryset = ''
 
-    def get_user(self, uuid_user):
-        try:
-            return User.objects.get(uuid=uuid_user)
-        except User.DoesNotExist:
-            raise Http404
-
     def list(self, request, *args, **kwargs):
-        found_user = self.get_user(kwargs['pk'])
+        found_user = actions.get_user(kwargs['pk'])
         user_posts = found_user.tweets.all()
         user_shared_posts = found_user.share_connector_account.all()
 
@@ -43,22 +142,9 @@ class UserTweets(generics.ListAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class DestroyTweet(generics.DestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'uuid'
-
-    def check_object_permissions(self, request, obj):
-        if obj.user == request.user:
-            return super(DestroyTweet, self).check_object_permissions(request, obj)
-        self.permission_denied(request, 'No permission!')
-
-    def get_queryset(self):
-        return Tweet.objects.all()
-
-
 class CreateTweet(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TweetSerializer
+    serializer_class = serializer.TweetSerializer
     queryset = ''
 
     def create(self, request, *args, **kwargs):
@@ -73,9 +159,22 @@ class CreateTweet(generics.CreateAPIView):
         serializer.save(user=self.request.user)
 
 
+class DestroyTweet(generics.DestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'uuid'
+
+    def check_object_permissions(self, request, obj):
+        if obj.user == request.user:
+            return super(DestroyTweet, self).check_object_permissions(request, obj)
+        self.permission_denied(request, 'No permission!')
+
+    def get_queryset(self):
+        return Tweet.objects.all()
+
+
 class TweetComments(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TweetCommentSerializer
+    serializer_class = serializer.TweetCommentSerializer
     queryset = ''
 
     def get_tweet(self, uuid_tweet):
@@ -119,12 +218,6 @@ class TweetComments(generics.ListCreateAPIView):
 class TweetLike(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get_tweet(self, uuid_tweet):
-        try:
-            return Tweet.objects.get(uuid=uuid_tweet)
-        except Tweet.DoesNotExist:
-            raise Http404
-
     def check_if_exists(self, request, found_tweet):
         try:
             result = LikeConnector.objects.get(
@@ -136,7 +229,7 @@ class TweetLike(generics.GenericAPIView):
         return result
 
     def post(self, request, *args, **kwargs):
-        found_tweet = self.get_tweet(kwargs['pk'])
+        found_tweet = actions.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
         created_like = LikeConnector.objects.create(
@@ -148,7 +241,7 @@ class TweetLike(generics.GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
-        found_tweet = self.get_tweet(kwargs['pk'])
+        found_tweet = actions.get_tweet(kwargs['pk'])
         found_like = self.check_if_exists(request, found_tweet)
         if not found_like:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -158,12 +251,6 @@ class TweetLike(generics.GenericAPIView):
 
 class TweetShare(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-
-    def get_tweet(self, uuid_tweet):
-        try:
-            return Tweet.objects.get(uuid=uuid_tweet)
-        except Tweet.DoesNotExist:
-            raise Http404
 
     def check_if_exists(self, request, found_tweet):
         try:
@@ -176,7 +263,7 @@ class TweetShare(generics.GenericAPIView):
         return result
 
     def post(self, request, *args, **kwargs):
-        found_tweet = self.get_tweet(kwargs['pk'])
+        found_tweet = actions.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
         created_share = ShareConnector.objects.create(
@@ -188,7 +275,7 @@ class TweetShare(generics.GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
-        found_tweet = self.get_tweet(kwargs['pk'])
+        found_tweet = actions.get_tweet(kwargs['pk'])
         found_share = self.check_if_exists(request, found_tweet)
         if not found_share:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)

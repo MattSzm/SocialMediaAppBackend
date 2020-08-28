@@ -4,6 +4,7 @@ from tweet import api
 app_name = 'tweet'
 
 urlpatterns = [
+    path('newsfeed/', api.NewsFeed.as_view(), name='news_feed'),
     path('byuser/<uuid:pk>/', api.UserTweets.as_view(), name='user_tweets'),
     path('create/', api.CreateTweet.as_view(), name='create_tweet'),
     path('destroy/<uuid:uuid>/', api.DestroyTweet.as_view(), name='destroy_tweet'),
