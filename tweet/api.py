@@ -11,6 +11,7 @@ from . import actions
 from collections import namedtuple
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.conf import settings
 
 
 class NewsFeed(generics.GenericAPIView):
@@ -21,12 +22,11 @@ class NewsFeed(generics.GenericAPIView):
                                  ('tweets', 'shares',
                                   'oldest_tweet_date',
                                   'oldest_share_tweet'))
-    size_of_newsfeed = 2
+    size_of_newsfeed = settings.NEWSFEED_SIZE
 
     def get_following_tweets(self, following_users, date_lt=timezone.now()):
         following_tweets = []
-        if type(date_lt) == str:
-            date_lt = parse_datetime(date_lt)
+        date_lt = actions.convert_from_string_to_date_if_needed(date_lt)
         for user in following_users:
             user_tweets = user.tweets.filter(created__lt=date_lt)
             following_tweets.extend(user_tweets)
@@ -34,39 +34,30 @@ class NewsFeed(generics.GenericAPIView):
 
     def get_following_shares(self, following_users, date_lt=timezone.now()):
         following_shares = []
-        if type(date_lt) == str:
-            date_lt = parse_datetime(date_lt)
+        date_lt = actions.convert_from_string_to_date_if_needed(date_lt)
         for user in following_users:
             user_shares = user.share_connector_account.filter(created__lt=date_lt)
             following_shares.extend(user_shares)
         return following_shares
 
-    def sort_set(self, set):
-        return sorted(set,
-                      key=attrgetter('created'),
-                      reverse=True)
-
     def get(self, request, *args, **kwargs):
         following_users = request.user.following.all()
+
         following_tweets = self.get_following_tweets(following_users)
         following_tweets.extend(request.user.tweets.all())
-        following_tweets = self.sort_set(following_tweets)
+        following_tweets = actions.sort_single_set(following_tweets)
 
         following_tweets = following_tweets[:self.size_of_newsfeed]
-        following_tweets_date = timezone.now()
-        for tweet in following_tweets:
-            if tweet and tweet.created < following_tweets_date:
-                following_tweets_date = tweet.created
+        following_tweets_date = actions.return_oldest_date(
+                                    following_tweets, timezone.now())
 
         following_shares = self.get_following_shares(following_users)
         following_shares.extend(request.user.share_connector_account.all())
-        following_shares = self.sort_set(following_shares)
+        following_shares = actions.sort_single_set(following_shares)
 
         following_shares = following_shares[:self.size_of_newsfeed // 2]
-        following_shares_date = timezone.now()
-        for share in following_shares:
-            if share and share.created < following_shares_date:
-                following_shares_date = share.created
+        following_shares_date = actions.return_oldest_date(
+                                    following_shares, timezone.now())
 
         news_feed = self.NewsFeedContent(
             tweets=following_tweets,
@@ -81,28 +72,27 @@ class NewsFeed(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-
         following_users = request.user.following.all()
-        following_tweets = self.get_following_tweets(following_users, serializer.data['oldest_tweet_date'])
-        following_tweets.extend(request.user.tweets.filter(created__lt=parse_datetime(serializer.data['oldest_tweet_date'])))
-        following_tweets = self.sort_set(following_tweets)
+
+        following_tweets = self.get_following_tweets(following_users,
+                                        serializer.data['oldest_tweet_date'])
+        following_tweets.extend(request.user.tweets.filter(
+                    created__lt=parse_datetime(serializer.data['oldest_tweet_date'])))
+        following_tweets = actions.sort_single_set(following_tweets)
 
         following_tweets = following_tweets[:self.size_of_newsfeed]
-        following_tweets_date = parse_datetime(serializer.data['oldest_tweet_date'])
-        for tweet in following_tweets:
-            if tweet and tweet.created < following_tweets_date:
-                following_tweets_date = tweet.created
+        following_tweets_date = actions.return_oldest_date(following_tweets,
+                                parse_datetime(serializer.data['oldest_tweet_date']))
 
-        following_shares = self.get_following_shares(following_users, serializer.data['oldest_share_tweet'])
-        following_shares.extend(request.user.share_connector_account.filter(created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
-        following_shares = self.sort_set(following_shares)
+        following_shares = self.get_following_shares(following_users,
+                                        serializer.data['oldest_share_tweet'])
+        following_shares.extend(request.user.share_connector_account.filter(
+                    created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
+        following_shares = actions.sort_single_set(following_shares)
 
         following_shares = following_shares[:self.size_of_newsfeed // 2]
-        following_shares_date = parse_datetime(serializer.data['oldest_share_tweet'])
-        for shared_tweet in following_shares:
-            if shared_tweet and shared_tweet.created < following_shares_date:
-                following_shares_date = shared_tweet.created
+        following_shares_date = actions.return_oldest_date(following_shares,
+                                parse_datetime(serializer.data['oldest_share_tweet']))
 
         news_feed = self.NewsFeedContent(
             tweets=following_tweets,
