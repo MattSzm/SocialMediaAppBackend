@@ -155,7 +155,8 @@ class DestroyTweet(generics.DestroyAPIView):
 
     def check_object_permissions(self, request, obj):
         if obj.user == request.user:
-            return super(DestroyTweet, self).check_object_permissions(request, obj)
+            return super(DestroyTweet, self).\
+                check_object_permissions(request, obj)
         self.permission_denied(request, 'No permission!')
 
     def get_queryset(self):
@@ -271,3 +272,6 @@ class TweetShare(generics.GenericAPIView):
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         found_share.delete()
         return Response(status=status.HTTP_200_OK)
+
+#todo: create search engine - searching in posts
+#create some dump data before

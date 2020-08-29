@@ -1,12 +1,14 @@
-from rest_framework.generics import RetrieveAPIView, GenericAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework import generics
 from user import serializer
 from user import models
 from rest_framework.response import Response
 from knox.models import AuthToken
 from rest_framework import permissions
+from django.http import Http404
+from rest_framework import status
 
 
-class UserDetail(RetrieveAPIView):
+class UserDetail(generics.RetrieveAPIView):
     serializer_class = serializer.UserSerializer
     lookup_field = 'uuid'
 
@@ -14,7 +16,7 @@ class UserDetail(RetrieveAPIView):
         return models.User.objects.all()
 
 
-class LoginAPI(GenericAPIView):
+class LoginAPI(generics.GenericAPIView):
     serializer_class = serializer.LoginSerializer
 
     def post(self, request, format=None):
@@ -23,11 +25,12 @@ class LoginAPI(GenericAPIView):
         user = serializer_object.validated_data
         return Response({
             "user": serializer.UserSerializer(user,
-                                context=self.get_serializer_context()).data,
-            "token": AuthToken.objects.create(user)[1]})
+                            context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)[1]},
+            status=status.HTTP_200_OK)
 
 
-class RegisterAPI(GenericAPIView):
+class RegisterAPI(generics.GenericAPIView):
     serializer_class = serializer.RegisterSerializer
 
     def post(self, request, format=None):
@@ -36,11 +39,12 @@ class RegisterAPI(GenericAPIView):
         user = serializer_object.save()
         return Response({
             "user": serializer.UserSerializer(user,
-                                              context=self.get_serializer_context()).data,
-            "token": AuthToken.objects.create(user)[1]})
+                            context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)[1]},
+            status=status.HTTP_201_CREATED)
 
 
-class CurrentUser(RetrieveUpdateDestroyAPIView):
+class CurrentUser(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializer.UserEditSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -48,4 +52,44 @@ class CurrentUser(RetrieveUpdateDestroyAPIView):
         return self.request.user
 
 
-#todo: create follow/unfollow endpoints
+class FollowAPI(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_user(self, uuid_user):
+        try:
+            return models.User.objects.get(uuid=uuid_user)
+        except models.User.DoesNotExist:
+            raise Http404
+
+    def check_if_exists(self, user_from, user_to):
+        try:
+            result = models.ContactConnector.objects.get(
+                user_from=user_from,
+                user_to=user_to
+            )
+        except models.ContactConnector.DoesNotExist:
+            return False
+        return result
+
+    def post(self, request, *args, **kwargs):
+        user_from = request.user
+        user_to = self.get_user(kwargs['pk'])
+        if self.check_if_exists(user_from, user_to):
+            return Response(status=status.HTTP_208_ALREADY_REPORTED)
+        models.ContactConnector.objects.create(
+            user_from=user_from,
+            user_to=user_to
+        )
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
+        user_from = request.user
+        user_to = self.get_user(kwargs['pk'])
+        found_follow = self.check_if_exists(user_from, user_to)
+        if not found_follow:
+            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        found_follow.delete()
+        return Response(status=status.HTTP_200_OK)
+
+
+#todo: create search engine - searching users with phrase

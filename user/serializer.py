@@ -14,10 +14,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserEditSerializer(serializers.ModelSerializer):
+    username_readonly = serializers.ReadOnlyField(source='username')
+
     class Meta:
         model = User
-        fields = ('id', 'uuid', 'username_displayed',
-                  'photo')
+        fields = ('id', 'uuid', 'username_readonly',
+                  'username_displayed', 'photo')
 
 
 class LoginSerializer(serializers.Serializer):
