@@ -12,6 +12,7 @@ from collections import namedtuple
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.conf import settings
+from .tasks import create_related_hashtags
 
 
 class NewsFeed(generics.GenericAPIView):
@@ -149,7 +150,8 @@ class CreateTweet(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         new_tweet = serializer.save(user=self.request.user)
-        actions.create_related_hashtags(new_tweet)
+        create_related_hashtags.delay(new_tweet.id)
+        # actions.create_related_hashtags(new_tweet)
 
 class DestroyTweet(generics.DestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
