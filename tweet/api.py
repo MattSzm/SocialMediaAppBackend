@@ -146,8 +146,8 @@ class CreateTweet(generics.CreateAPIView):
                         headers=headers)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
+        new_tweet = serializer.save(user=self.request.user)
+        actions.create_related_hashtags(new_tweet)
 
 class DestroyTweet(generics.DestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)

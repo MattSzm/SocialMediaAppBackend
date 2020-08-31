@@ -1,6 +1,6 @@
 from django.http import Http404
 from user.models import User
-from tweet.models import Tweet
+from tweet.models import Tweet, Hashtag, HashtagConnector
 from django.utils.dateparse import parse_datetime
 from operator import attrgetter
 
@@ -32,3 +32,26 @@ def return_oldest_date(set, prev_date):
         if item and item.created < prev_date:
             prev_date = item.created
     return prev_date
+
+def create_related_hashtags(tweet):
+    words = tweet.content.split(' ')
+    for word in words:
+        if word.startswith('#'):
+            found_hashtag = try_to_find_hashtag(word[1:])
+            if found_hashtag:
+                create_hashtag_connector(found_hashtag, tweet)
+            else:
+                new_hashtag = Hashtag.objects.create(hashtag_value=word[1:])
+                create_hashtag_connector(new_hashtag, tweet)
+
+def try_to_find_hashtag(word):
+    try:
+        return Hashtag.objects.get(hashtag_value=word)
+    except Hashtag.DoesNotExist:
+        return False
+
+def create_hashtag_connector(hashtag, tweet):
+    HashtagConnector.objects.create(
+        hashtag=hashtag,
+        tweet=tweet
+    )
