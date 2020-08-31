@@ -6,6 +6,7 @@ from knox.models import AuthToken
 from rest_framework import permissions
 from django.http import Http404
 from rest_framework import status
+from django.db.models import Q
 
 
 class UserDetail(generics.RetrieveAPIView):
@@ -92,4 +93,21 @@ class FollowAPI(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-#todo: create search engine - searching users with phrase
+class UserSearch(generics.ListAPIView):
+    serializer_class = serializer.UserSerializer
+    queryset = ''
+
+    def get_users(self, phrase, current_user):
+        return  models.User.objects.filter(
+            (Q(username__icontains=phrase) |
+             Q(username_displayed__icontains=phrase)) &
+                ~Q(id=current_user.id))
+
+    def list(self, request, *args, **kwargs):
+        result = self.get_users(kwargs['phrase'], request.user)
+        if len(result) > 0:
+            page = self.paginate_queryset(result)
+            serializer = self.get_serializer(page, many=True,
+                                    context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -273,5 +273,19 @@ class TweetShare(generics.GenericAPIView):
         found_share.delete()
         return Response(status=status.HTTP_200_OK)
 
-#todo: create search engine - searching in posts
-#create some dump data before
+
+class TweetSearch(generics.ListAPIView):
+    serializer_class = serializer.TweetSerializer
+    queryset = ''
+
+    def get_tweets(self, phrase):
+        return Tweet.objects.filter(content__icontains=phrase)
+
+    def list(self, request, *args, **kwargs):
+        result = self.get_tweets(kwargs['phrase'])
+        if len(result) > 0:
+            page = self.paginate_queryset(result)
+            serializer = self.get_serializer(page, many=True,
+                                             context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)

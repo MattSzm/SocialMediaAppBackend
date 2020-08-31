@@ -13,3 +13,4 @@ user/migrations/__pycache__/
 /media
 tweet/__pycache__/
 tweet/migrations/__pycache__/
+dumpdata

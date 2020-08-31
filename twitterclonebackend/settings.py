@@ -13,7 +13,7 @@ def getSecret(setting, secretsKeys=secretKeys):
     try:
         return secretKeys[setting]
     except KeyError:
-        message = f'Set the {setting} enviroment variable'
+        message = f'Set the {setting} environment variable'
         raise ImproperlyConfigured(message)
 
 
