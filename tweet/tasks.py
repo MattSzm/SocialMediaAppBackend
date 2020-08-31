@@ -11,7 +11,8 @@ def create_related_hashtags(tweet_id):
             if found_hashtag:
                 create_hashtag_connector(found_hashtag, tweet)
             else:
-                new_hashtag = Hashtag.objects.create(hashtag_value=word[1:])
+                new_hashtag = Hashtag.objects.create(
+                                    hashtag_value=word[1:])
                 create_hashtag_connector(new_hashtag, tweet)
 
 def try_to_find_hashtag(word):

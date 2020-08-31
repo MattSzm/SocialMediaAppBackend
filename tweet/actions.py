@@ -1,6 +1,6 @@
 from django.http import Http404
 from user.models import User
-from tweet.models import Tweet
+from tweet.models import Tweet, Hashtag
 from django.utils.dateparse import parse_datetime
 from operator import attrgetter
 
@@ -15,6 +15,12 @@ def get_tweet(uuid_tweet):
     try:
         return Tweet.objects.get(uuid=uuid_tweet)
     except Tweet.DoesNotExist:
+        raise Http404
+
+def get_hashtag(hashtag_value):
+    try:
+        return Hashtag.objects.get(hashtag_value=hashtag_value)
+    except Hashtag.DoesNotExist:
         raise Http404
 
 def convert_from_string_to_date_if_needed(date):

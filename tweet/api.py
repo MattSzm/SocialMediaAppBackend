@@ -5,8 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from itertools import chain
 from operator import attrgetter
-from tweet.models import Tweet, LikeConnector, ShareConnector, Hashtag
-from django.http import Http404
+from tweet.models import Tweet, LikeConnector, ShareConnector
 from . import actions
 from collections import namedtuple
 from django.utils import timezone
@@ -42,6 +41,11 @@ class NewsFeed(generics.GenericAPIView):
         return following_shares
 
     def get(self, request, *args, **kwargs):
+        """
+        Fetch newsfeed for current user. First request always with get method.
+        'size_of_newsfeed' tells how many tweets should we dispatch.
+        No url's args needed.
+        """
         following_users = request.user.following.all()
 
         following_tweets = self.get_following_tweets(following_users)
@@ -72,6 +76,12 @@ class NewsFeed(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
+        """
+        Works as a loadmore method.
+        Need to be passed timestamp of last displayed tweet and shared tweet.
+        These timestamps are sent to the client.
+        All client has to do is to pass them back.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         following_users = request.user.following.all()
@@ -113,6 +123,11 @@ class UserTweets(generics.ListAPIView):
     queryset = ''
 
     def list(self, request, *args, **kwargs):
+        """
+        Return list of user's tweets.
+        Need to be passed uuid of the user.
+        Pagination is on.
+        """
         found_user = actions.get_user(kwargs['pk'])
         user_posts = found_user.tweets.all()
         user_shared_posts = found_user.share_connector_account.all()
@@ -141,6 +156,10 @@ class CreateTweet(generics.CreateAPIView):
     queryset = ''
 
     def create(self, request, *args, **kwargs):
+        """
+        Post method creates new tweet.
+        Need to be passed: content and image(alternatively)
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -156,6 +175,9 @@ class CreateTweet(generics.CreateAPIView):
 class DestroyTweet(generics.DestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'uuid'
+    """
+    Destroys tweet with a given uuid.
+    """
 
     def check_object_permissions(self, request, obj):
         if obj.user == request.user:
@@ -172,24 +194,22 @@ class TweetComments(generics.ListCreateAPIView):
     serializer_class = serializer.TweetCommentSerializer
     queryset = ''
 
-    def get_tweet(self, uuid_tweet):
-        try:
-            return Tweet.objects.get(uuid=uuid_tweet)
-        except Tweet.DoesNotExist:
-            raise Http404
-
     def check_permissions(self, request):
         if request.method in permissions.SAFE_METHODS:
             return True
         super(TweetComments, self).check_permissions(request)
 
     def dispatch(self, request, *args, **kwargs):
-        self.found_tweet = self.get_tweet(kwargs['pk'])
+        self.found_tweet = actions.get_tweet(kwargs['pk'])
         return super(TweetComments, self).dispatch(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
+        """
+        Show comments of given tweet.
+        Need to be passed uuid of the tweet.
+        Pagination is on.
+        """
         tweet_comments = self.found_tweet.comment_connector_tweet.all()
-
         if len(tweet_comments) > 0:
             page = self.paginate_queryset(tweet_comments)
             serializer = self.get_serializer(page, many=True,
@@ -198,6 +218,10 @@ class TweetComments(generics.ListCreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
+        """
+        Create new comment to the tweet as a current
+        authenticated user.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -224,6 +248,13 @@ class TweetLike(generics.GenericAPIView):
         return result
 
     def post(self, request, *args, **kwargs):
+        """
+        Create new tweet's like.
+        Only if current user hasn't liked the tweet before.
+        Otherwise, we return HTTP_208.
+        Need to be passed tweet's uuid in the url.
+        No (post) data needed.
+        """
         found_tweet = actions.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
@@ -236,6 +267,10 @@ class TweetLike(generics.GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
+        """
+        If possible, delete tweet's like of the current user.
+        Otherwise, we cannot perform request and return HTTP_406
+        """
         found_tweet = actions.get_tweet(kwargs['pk'])
         found_like = self.check_if_exists(request, found_tweet)
         if not found_like:
@@ -258,6 +293,14 @@ class TweetShare(generics.GenericAPIView):
         return result
 
     def post(self, request, *args, **kwargs):
+        """
+        Create new tweet's share.
+        Only if current user hasn't shared the tweet before.
+        User can share post ONLY ONCE.
+        Otherwise, we return HTTP_208.
+        Need to be passed tweet's uuid in the url.
+        No (post) data needed.
+        """
         found_tweet = actions.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
@@ -270,6 +313,10 @@ class TweetShare(generics.GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
+        """
+        If possible, delete tweet's share of the current user.
+        Otherwise, we cannot perform request and return HTTP_406
+        """
         found_tweet = actions.get_tweet(kwargs['pk'])
         found_share = self.check_if_exists(request, found_tweet)
         if not found_share:
@@ -286,6 +333,13 @@ class TweetSearch(generics.ListAPIView):
         return Tweet.objects.filter(content__icontains=phrase)
 
     def list(self, request, *args, **kwargs):
+        """
+        Get method returns all tweets with the given
+        phrase in their contents.
+        Searching phrase should be passed in the url.
+        If there is no tweets, we return HTTP_204.
+        Pagination is on.
+        """
         found_tweets = self.get_tweets(kwargs['phrase'])
         if len(found_tweets) > 0:
             page = self.paginate_queryset(found_tweets)
@@ -299,14 +353,15 @@ class TweetsWithHashtag(generics.ListAPIView):
     serializer_class = serializer.TweetSerializer
     queryset = ''
 
-    def get_hashtag(self, hashtag_value):
-        try:
-            return Hashtag.objects.get(hashtag_value=hashtag_value)
-        except Hashtag.DoesNotExist:
-            raise Http404
-
     def list(self, request, *args, **kwargs):
-        hashtag_object = self.get_hashtag(kwargs['value'])
+        """
+        Get method returns all tweets with the given
+        hashtag in their contents.
+        The hashtag value should be passed in the url.
+        If there is no tweets, we return HTTP_204.
+        Pagination is on.
+        """
+        hashtag_object = actions.get_hashtag(kwargs['value'])
         related_tweets = hashtag_object.tweets.all()
         if len(related_tweets) > 0:
             page = self.paginate_queryset(related_tweets)
