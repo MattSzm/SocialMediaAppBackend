@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from itertools import chain
 from operator import attrgetter
-from tweet.models import Tweet, LikeConnector, ShareConnector
+from tweet.models import Tweet, LikeConnector, ShareConnector, Hashtag
 from django.http import Http404
 from . import actions
 from collections import namedtuple
@@ -55,6 +55,7 @@ class NewsFeed(generics.GenericAPIView):
         following_shares.extend(request.user.share_connector_account.all())
         following_shares = actions.sort_single_set(following_shares)
 
+        #todo: change to // 3
         following_shares = following_shares[:self.size_of_newsfeed // 2]
         following_shares_date = actions.return_oldest_date(
                                     following_shares, timezone.now())
@@ -90,6 +91,7 @@ class NewsFeed(generics.GenericAPIView):
                     created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
         following_shares = actions.sort_single_set(following_shares)
 
+        #todo: change to // 3
         following_shares = following_shares[:self.size_of_newsfeed // 2]
         following_shares_date = actions.return_oldest_date(following_shares,
                                 parse_datetime(serializer.data['oldest_share_tweet']))
@@ -282,10 +284,31 @@ class TweetSearch(generics.ListAPIView):
         return Tweet.objects.filter(content__icontains=phrase)
 
     def list(self, request, *args, **kwargs):
-        result = self.get_tweets(kwargs['phrase'])
-        if len(result) > 0:
-            page = self.paginate_queryset(result)
+        found_tweets = self.get_tweets(kwargs['phrase'])
+        if len(found_tweets) > 0:
+            page = self.paginate_queryset(found_tweets)
             serializer = self.get_serializer(page, many=True,
-                                             context={'request': request})
+                                    context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TweetsWithHashtag(generics.ListAPIView):
+    serializer_class = serializer.TweetSerializer
+    queryset = ''
+
+    def get_hashtag(self, hashtag_value):
+        try:
+            return Hashtag.objects.get(hashtag_value=hashtag_value)
+        except Hashtag.DoesNotExist:
+            raise Http404
+
+    def list(self, request, *args, **kwargs):
+        hashtag_object = self.get_hashtag(kwargs['value'])
+        related_tweets = hashtag_object.tweets.all()
+        if len(related_tweets) > 0:
+            page = self.paginate_queryset(related_tweets)
+            serializer = self.get_serializer(page, many=True,
+                                    context={'request': request})
             return self.get_paginated_response(serializer.data)
         return Response(status=status.HTTP_204_NO_CONTENT)

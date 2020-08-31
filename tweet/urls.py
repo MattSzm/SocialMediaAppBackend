@@ -12,4 +12,6 @@ urlpatterns = [
     path('share/<uuid:pk>/', api.TweetShare.as_view(), name='tweet_share'),
     path('comments/<uuid:pk>/', api.TweetComments.as_view(), name='tweet_comments'),
     path('search/<str:phrase>/', api.TweetSearch.as_view(), name='search_tweets'),
+    path('withhashtag/<str:value>/', api.TweetsWithHashtag.as_view(),
+                                            name='tweets_with_hashtag')
 ]

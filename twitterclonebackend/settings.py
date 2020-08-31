@@ -144,4 +144,5 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 2
 }
 
+#todo: change to 10
 NEWSFEED_SIZE = 2

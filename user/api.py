@@ -104,9 +104,9 @@ class UserSearch(generics.ListAPIView):
                 ~Q(id=current_user.id))
 
     def list(self, request, *args, **kwargs):
-        result = self.get_users(kwargs['phrase'], request.user)
-        if len(result) > 0:
-            page = self.paginate_queryset(result)
+        found_users = self.get_users(kwargs['phrase'], request.user)
+        if len(found_users) > 0:
+            page = self.paginate_queryset(found_users)
             serializer = self.get_serializer(page, many=True,
                                     context={'request': request})
             return self.get_paginated_response(serializer.data)
