@@ -36,14 +36,14 @@ Personal project presenting back-end of the application based on twitter functio
   Users can log in with both emails and usernames.
   Client side should prevent from using '@' in the usernames.
   
-  ##Hashtag system
+  ## Hashtag system
   Instead of searching through all posts to find the right ones with given #hashtag,
   server asynchronously creates object of custom data structure 
   which simplifies the subsequent search.
   This solution reduce execution time.
   Endpoint `withhashtag/<str:hashtag>/`.
   
-  ##Pagination
+  ## Pagination
   In order to reduce response size of list requests, there was used pagination. 
   It prevents from overloading.
   Every response has link to next/previous page, which can be simply named as
@@ -51,7 +51,7 @@ Personal project presenting back-end of the application based on twitter functio
   However, newsfeed endpoint takes different approach, the solution is 
   explained in `apischema/`.  
   
-  ###Front-end side
+  ### Front-end side
   https://github.com/MattSzm/SocialMediaAppFrontend
 
 
