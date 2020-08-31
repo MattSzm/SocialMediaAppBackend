@@ -14,3 +14,5 @@ user/migrations/__pycache__/
 tweet/__pycache__/
 tweet/migrations/__pycache__/
 dumpdata
+auth/__pycache__/
+auth/migrations/__pycache__/

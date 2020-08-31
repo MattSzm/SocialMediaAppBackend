@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('api/user/', include('user.urls', namespace='user')),
     path('api/tweet/', include('tweet.urls', namespace='tweet')),
+    path('api/auth/', include('auth.urls', namespace='auth')),
     path('admin/', admin.site.urls),
 ]
 
