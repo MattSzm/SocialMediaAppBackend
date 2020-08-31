@@ -3,7 +3,7 @@ from .models import Tweet, CommentConnector, ShareConnector
 
 class TweetSerializer(serializers.HyperlinkedModelSerializer):
     user = serializers.HyperlinkedRelatedField(many=False,
-                                               view_name='user:user_detail',
+                                               view_name='user:user_detail_uuid',
                                                read_only=True,
                                                lookup_field='uuid')
     number_likes = serializers.ReadOnlyField(source='number_of_likes')
@@ -18,7 +18,7 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
 
 class ShareSerializer(serializers.HyperlinkedModelSerializer):
     account = serializers.HyperlinkedRelatedField(many=False,
-                                               view_name='user:user_detail',
+                                               view_name='user:user_detail_uuid',
                                                read_only=True,
                                                lookup_field='uuid')
     tweet_itself = TweetSerializer(source='tweet')
@@ -38,7 +38,7 @@ class NewsFeedSerializer(serializers.Serializer):
 
 class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):
     account = serializers.HyperlinkedRelatedField(many=False,
-                                                  view_name='user:user_detail',
+                                                  view_name='user:user_detail_uuid',
                                                   read_only=True,
                                                   lookup_field='uuid')
 
