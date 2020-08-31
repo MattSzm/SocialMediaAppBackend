@@ -80,7 +80,7 @@ class NewsFeed(generics.GenericAPIView):
         Works as a loadmore method.
         Need to be passed timestamp of last displayed tweet and shared tweet.
         These timestamps are sent to the client.
-        All client has to do is to pass them back.
+        All client has to do is to pass them back.(Of course they can be changed if client needs)
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -170,7 +170,7 @@ class CreateTweet(generics.CreateAPIView):
     def perform_create(self, serializer):
         new_tweet = serializer.save(user=self.request.user)
         create_related_hashtags.delay(new_tweet.id)
-        # actions.create_related_hashtags(new_tweet)
+
 
 class DestroyTweet(generics.DestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
