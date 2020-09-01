@@ -1,6 +1,6 @@
 # Social media app Back-end 
 Personal project presenting back-end of the application based on twitter functionality. 
-
+(This is NOT Twitter clone)
 ##  I've created it with:
  * [Django][djangolink]
  * [Django Rest Framework][restframeworklink]
