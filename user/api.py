@@ -119,7 +119,7 @@ class UserSearch(generics.ListAPIView):
              Pagination is on.
         """
         found_users = self.get_users(kwargs['phrase'], request.user)
-        if len(found_users) > 0:
+        if found_users:
             page = self.paginate_queryset(found_users)
             serializer = self.get_serializer(page, many=True,
                                     context={'request': request})

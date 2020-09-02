@@ -142,7 +142,7 @@ class UserTweets(generics.ListAPIView):
             if hasattr(result_list[index], 'tweet'):
                 result_list[index] = result_list[index].tweet
 
-        if len(result_list) > 0:
+        if result_list:
             page = self.paginate_queryset(result_list)
             serializer = self.get_serializer(page, many=True,
                                             context={'request': request})
@@ -210,7 +210,7 @@ class TweetComments(generics.ListCreateAPIView):
         Pagination is on.
         """
         tweet_comments = self.found_tweet.comment_connector_tweet.all()
-        if len(tweet_comments) > 0:
+        if tweet_comments:
             page = self.paginate_queryset(tweet_comments)
             serializer = self.get_serializer(page, many=True,
                                             context={'request': request})
@@ -341,7 +341,7 @@ class TweetSearch(generics.ListAPIView):
         Pagination is on.
         """
         found_tweets = self.get_tweets(kwargs['phrase'])
-        if len(found_tweets) > 0:
+        if found_tweets:
             page = self.paginate_queryset(found_tweets)
             serializer = self.get_serializer(page, many=True,
                                     context={'request': request})
@@ -363,7 +363,7 @@ class TweetsWithHashtag(generics.ListAPIView):
         """
         hashtag_object = actions.get_hashtag(kwargs['value'])
         related_tweets = hashtag_object.tweets.all()
-        if len(related_tweets) > 0:
+        if related_tweets:
             page = self.paginate_queryset(related_tweets)
             serializer = self.get_serializer(page, many=True,
                                     context={'request': request})
