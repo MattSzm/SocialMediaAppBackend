@@ -24,7 +24,10 @@ class NewsFeed(generics.GenericAPIView):
                                   'oldest_share_tweet'))
     size_of_newsfeed = settings.NEWSFEED_SIZE
 
-    def get_following_tweets(self, following_users, date_lt=timezone.now()):
+    def get_following_tweets(self, following_users, date_lt=None):
+        if date_lt is None:
+            date_lt = timezone.now()
+
         following_tweets = []
         date_lt = actions.convert_from_string_to_date_if_needed(date_lt)
         for user in following_users:
@@ -32,7 +35,10 @@ class NewsFeed(generics.GenericAPIView):
             following_tweets.extend(user_tweets)
         return following_tweets
 
-    def get_following_shares(self, following_users, date_lt=timezone.now()):
+    def get_following_shares(self, following_users, date_lt=None):
+        if date_lt is None:
+            date_lt = timezone.now()
+
         following_shares = []
         date_lt = actions.convert_from_string_to_date_if_needed(date_lt)
         for user in following_users:
@@ -87,7 +93,7 @@ class NewsFeed(generics.GenericAPIView):
         following_users = request.user.following.all()
 
         following_tweets = self.get_following_tweets(following_users,
-                                        serializer.data['oldest_tweet_date'])
+                                date_lt=serializer.data['oldest_tweet_date'])
         following_tweets.extend(request.user.tweets.filter(
                     created__lt=parse_datetime(serializer.data['oldest_tweet_date'])))
         following_tweets = actions.sort_single_set(following_tweets)
@@ -97,7 +103,7 @@ class NewsFeed(generics.GenericAPIView):
                                 parse_datetime(serializer.data['oldest_tweet_date']))
 
         following_shares = self.get_following_shares(following_users,
-                                        serializer.data['oldest_share_tweet'])
+                                date_lt=serializer.data['oldest_share_tweet'])
         following_shares.extend(request.user.share_connector_account.filter(
                     created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
         following_shares = actions.sort_single_set(following_shares)
