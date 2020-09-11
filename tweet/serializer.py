@@ -9,11 +9,19 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
     number_likes = serializers.ReadOnlyField(source='number_of_likes')
     number_shares = serializers.ReadOnlyField(source='number_of_shares')
     number_comments = serializers.ReadOnlyField(source='number_of_comments')
+    liked_by_current_user = serializers.SerializerMethodField()
+
+    def get_liked_by_current_user(self, obj):
+        if self.context['request'].user:
+            if self.context['request'].user in obj.likes.all():
+                return True
+        return False
 
     class Meta:
         model = Tweet
         fields = ('id', 'content', 'uuid', 'created', 'user', 'image',
-                  'number_likes', 'number_shares', 'number_comments')
+                  'number_likes', 'number_shares', 'number_comments',
+                  'liked_by_current_user')
 
 
 class ShareSerializer(serializers.HyperlinkedModelSerializer):
