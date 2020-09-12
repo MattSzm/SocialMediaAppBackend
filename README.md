@@ -4,7 +4,7 @@ Personal project presenting back-end of the application based on twitter functio
 ##  I've created it with:
  * [Django][djangolink]
  * [Django Rest Framework][restframeworklink]
- * [Celery][celerylink]
+ * [Celery][celerylink] (with [RabbitMQ][rabbitmqlink])
  
  ## Database I used:
  * [PostgreSQL][postgreslink]
@@ -20,7 +20,7 @@ Personal project presenting back-end of the application based on twitter functio
  ![](media-readMe/login_success.png)
  
  ##### User's tweets and shared tweets
- ![](media-readMe/tweets_by_user.png)
+ ![](media-readMe/user_tweets.png)
  
   ## Authentication and Permission
   Authentication is based on Tokens.
@@ -59,3 +59,4 @@ Personal project presenting back-end of the application based on twitter functio
  [djangolink]:https://www.djangoproject.com/
  [celerylink]:https://docs.celeryproject.org/en/stable/
  [postgreslink]:https://www.postgresql.org/
+ [rabbitmqlink]:https://www.rabbitmq.com/
