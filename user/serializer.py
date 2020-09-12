@@ -13,13 +13,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserEditSerializer(serializers.ModelSerializer):
-    username_readonly = serializers.ReadOnlyField(source='username')
+
     number_following = serializers.ReadOnlyField(source='num_of_following')
     number_followers = serializers.ReadOnlyField(source='num_of_followers')
 
     class Meta:
         model = User
-        fields = ('id', 'uuid', 'username_readonly',
+        fields = ('id', 'uuid', 'username',
                   'username_displayed', 'photo',
                   'number_following', 'number_followers')
+        read_only_fields = ('username',)
 

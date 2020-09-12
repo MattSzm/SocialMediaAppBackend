@@ -38,3 +38,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+
+    def validate(self, data):
+        if len(data['password']) < 6:
+            raise serializers.ValidationError("Password too short")
+        if ' ' in data['username']:
+            raise serializers.ValidationError("Username cannot contain whitespaces")
+        if '@' not in data['email']:
+            raise serializers.ValidationError("Invalid email")
+        return data
