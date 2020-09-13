@@ -1,11 +1,12 @@
+from django.http import Http404
+from django.db.models import Q
 from rest_framework import generics
-from user import serializer
-from user import models
 from rest_framework.response import Response
 from rest_framework import permissions
-from django.http import Http404
 from rest_framework import status
-from django.db.models import Q
+
+from user import serializer
+from user import models
 
 
 class UserDetailByUuid(generics.RetrieveAPIView):

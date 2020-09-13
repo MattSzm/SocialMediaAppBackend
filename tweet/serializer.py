@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from .models import Tweet, CommentConnector, ShareConnector
+
 
 class TweetSerializer(serializers.HyperlinkedModelSerializer):
     user = serializers.HyperlinkedRelatedField(many=False,

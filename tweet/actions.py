@@ -1,8 +1,12 @@
+from operator import attrgetter
+
 from django.http import Http404
+from django.utils.dateparse import parse_datetime
+
 from user.models import User
 from tweet.models import Tweet, Hashtag
-from django.utils.dateparse import parse_datetime
-from operator import attrgetter
+
+
 
 
 def get_user(uuid_user):

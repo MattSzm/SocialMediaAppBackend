@@ -1,9 +1,10 @@
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status
+from knox.models import AuthToken
+
 from . import serializer
 from user.serializer import UserSerializer
-from rest_framework.response import Response
-from knox.models import AuthToken
-from rest_framework import status
 from user.models import User
 
 

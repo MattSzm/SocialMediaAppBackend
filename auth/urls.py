@@ -1,6 +1,7 @@
 from django.urls import path
-from auth import api
 from knox import views as knox_views
+
+from auth import api
 
 
 app_name = 'auth'
