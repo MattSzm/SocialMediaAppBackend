@@ -3,7 +3,6 @@ from operator import attrgetter
 from collections import namedtuple
 
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django.conf import settings
 from rest_framework import generics
 from rest_framework import permissions
@@ -21,12 +20,11 @@ class NewsFeed(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = ''
     NewsFeedContent = namedtuple('NewsFeedContent',
-                                 ('tweets', 'shares',
-                                  'oldest_tweet_date',
-                                  'oldest_share_tweet'))
-    size_of_newsfeed = settings.NEWSFEED_SIZE
+                                 ('tweets',
+                                  'shares',
+                                  'time_stamp'))
 
-    def get_following_tweets(self, following_users, date_lt=None):
+    def get_following_tweets(self, following_users, current_user, date_lt=None):
         if date_lt is None:
             date_lt = timezone.now()
 
@@ -35,9 +33,10 @@ class NewsFeed(generics.GenericAPIView):
         for user in following_users:
             user_tweets = user.tweets.filter(created__lt=date_lt)
             following_tweets.extend(user_tweets)
+        following_tweets.extend(current_user.tweets.filter(created__lt=date_lt))
         return following_tweets
 
-    def get_following_shares(self, following_users, date_lt=None):
+    def get_following_shares(self, following_users, current_user, date_lt=None):
         if date_lt is None:
             date_lt = timezone.now()
 
@@ -46,6 +45,8 @@ class NewsFeed(generics.GenericAPIView):
         for user in following_users:
             user_shares = user.share_connector_account.filter(created__lt=date_lt)
             following_shares.extend(user_shares)
+        following_shares.extend(current_user.share_connector_account\
+                                .filter(created__lt=date_lt))
         return following_shares
 
     def get(self, request, *args, **kwargs):
@@ -55,29 +56,21 @@ class NewsFeed(generics.GenericAPIView):
         No url's args needed.
         """
         following_users = request.user.following.all()
-
-        following_tweets = self.get_following_tweets(following_users)
-        following_tweets.extend(request.user.tweets.all())
+        following_tweets = self.get_following_tweets(following_users,
+                                                     request.user)
         following_tweets = actions.sort_single_set(following_tweets)
 
-        following_tweets = following_tweets[:self.size_of_newsfeed]
-        following_tweets_date = actions.return_oldest_date(
-                                    following_tweets, timezone.now())
-
-        following_shares = self.get_following_shares(following_users)
-        following_shares.extend(request.user.share_connector_account.all())
+        following_shares = self.get_following_shares(following_users,
+                                                     request.user)
         following_shares = actions.sort_single_set(following_shares)
 
-        #todo: change to // 3
-        following_shares = following_shares[:self.size_of_newsfeed // 2]
-        following_shares_date = actions.return_oldest_date(
-                                    following_shares, timezone.now())
+        tweets_output, shares_output, time_stamp = actions.create_response_data(
+                                following_tweets, following_shares)
 
         news_feed = self.NewsFeedContent(
-            tweets=following_tweets,
-            shares=following_shares,
-            oldest_tweet_date=following_tweets_date,
-            oldest_share_tweet=following_shares_date
+            tweets = tweets_output,
+            shares = shares_output,
+            time_stamp = time_stamp
         )
         serializer = self.get_serializer(news_feed,
                                          context={'request': request})
@@ -88,38 +81,30 @@ class NewsFeed(generics.GenericAPIView):
         Works as a loadmore method.
         Need to be passed timestamp of last displayed tweet and shared tweet.
         These timestamps are sent to the client.
-        All client has to do is to pass them back.(Of course they can be changed if client needs)
+        All client has to do is to pass them back.(Of course they can be
+        changed if client needs)
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        following_users = request.user.following.all()
 
+        following_users = request.user.following.all()
         following_tweets = self.get_following_tweets(following_users,
-                                date_lt=serializer.data['oldest_tweet_date'])
-        following_tweets.extend(request.user.tweets.filter(
-                    created__lt=parse_datetime(serializer.data['oldest_tweet_date'])))
+                                    request.user,
+                                    date_lt=serializer.data['time_stamp'])
         following_tweets = actions.sort_single_set(following_tweets)
 
-        following_tweets = following_tweets[:self.size_of_newsfeed]
-        following_tweets_date = actions.return_oldest_date(following_tweets,
-                                parse_datetime(serializer.data['oldest_tweet_date']))
-
         following_shares = self.get_following_shares(following_users,
-                                date_lt=serializer.data['oldest_share_tweet'])
-        following_shares.extend(request.user.share_connector_account.filter(
-                    created__lt=parse_datetime(serializer.data['oldest_share_tweet'])))
+                                    request.user,
+                                    date_lt=serializer.data['time_stamp'])
         following_shares = actions.sort_single_set(following_shares)
 
-        #todo: change to // 3
-        following_shares = following_shares[:self.size_of_newsfeed // 2]
-        following_shares_date = actions.return_oldest_date(following_shares,
-                                parse_datetime(serializer.data['oldest_share_tweet']))
+        tweets_output, shares_output, time_stamp = actions.create_response_data(
+                                following_tweets, following_shares)
 
         news_feed = self.NewsFeedContent(
-            tweets=following_tweets,
-            shares=following_shares,
-            oldest_tweet_date=following_tweets_date,
-            oldest_share_tweet=following_shares_date
+            tweets=tweets_output,
+            shares=shares_output,
+            time_stamp = time_stamp
         )
         serializer = self.get_serializer(news_feed,
                                          context={'request': request})

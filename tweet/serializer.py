@@ -41,9 +41,7 @@ class ShareSerializer(serializers.HyperlinkedModelSerializer):
 class NewsFeedSerializer(serializers.Serializer):
     tweets = TweetSerializer(many=True, read_only=True)
     shares = ShareSerializer(many=True, read_only=True)
-    oldest_tweet_date = serializers.DateTimeField()
-    oldest_share_tweet = serializers.DateTimeField()
-
+    time_stamp = serializers.DateTimeField()
 
 
 class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):
