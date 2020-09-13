@@ -7,8 +7,6 @@ from user.models import User
 from tweet.models import Tweet, Hashtag
 
 
-
-
 def get_user(uuid_user):
     try:
         return User.objects.get(uuid=uuid_user)

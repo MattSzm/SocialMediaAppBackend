@@ -289,6 +289,7 @@ class TweetLike(generics.GenericAPIView):
 
 class TweetShare(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializer.ShareSerializer
 
     def check_if_exists(self, request, found_tweet):
         try:
@@ -312,13 +313,18 @@ class TweetShare(generics.GenericAPIView):
         found_tweet = actions.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
-        created_share = ShareConnector.objects.create(
-            account=request.user,
-            tweet=found_tweet
-        )
-        if created_share:
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        if request.user != found_tweet.user:
+            created_share = ShareConnector.objects.create(
+                account=request.user,
+                tweet=found_tweet
+            )
+            if created_share:
+                serializer = self.get_serializer(created_share,
+                                        context={'request': request})
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
 
     def delete(self, request, *args, **kwargs):
         """
