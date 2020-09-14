@@ -3,7 +3,6 @@ from operator import attrgetter
 from collections import namedtuple
 
 from django.utils import timezone
-from django.conf import settings
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import status
@@ -12,7 +11,9 @@ from rest_framework.response import Response
 from tweet import serializer
 from tweet.models import Tweet, LikeConnector, ShareConnector
 from . import actions
+from . import getters
 from .tasks import create_related_hashtags
+from .create_response_algorithm import create_response_data
 
 
 class NewsFeed(generics.GenericAPIView):
@@ -64,7 +65,7 @@ class NewsFeed(generics.GenericAPIView):
                                                      request.user)
         following_shares = actions.sort_single_set(following_shares)
 
-        tweets_output, shares_output, time_stamp = actions.create_response_data(
+        tweets_output, shares_output, time_stamp = create_response_data(
                                 following_tweets, following_shares)
 
         news_feed = self.NewsFeedContent(
@@ -98,7 +99,7 @@ class NewsFeed(generics.GenericAPIView):
                                     date_lt=serializer.data['time_stamp'])
         following_shares = actions.sort_single_set(following_shares)
 
-        tweets_output, shares_output, time_stamp = actions.create_response_data(
+        tweets_output, shares_output, time_stamp = create_response_data(
                                 following_tweets, following_shares)
 
         news_feed = self.NewsFeedContent(
@@ -121,7 +122,7 @@ class UserTweets(generics.ListAPIView):
         Need to be passed uuid of the user.
         Pagination is on.
         """
-        found_user = actions.get_user(kwargs['pk'])
+        found_user = getters.get_user(kwargs['pk'])
         user_posts = found_user.tweets.all()
         user_shared_posts = found_user.share_connector_account.all()
 
@@ -193,7 +194,7 @@ class TweetComments(generics.ListCreateAPIView):
         super(TweetComments, self).check_permissions(request)
 
     def dispatch(self, request, *args, **kwargs):
-        self.found_tweet = actions.get_tweet(kwargs['pk'])
+        self.found_tweet = getters.get_tweet(kwargs['pk'])
         return super(TweetComments, self).dispatch(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
@@ -248,7 +249,7 @@ class TweetLike(generics.GenericAPIView):
         Need to be passed tweet's uuid in the url.
         No (post) data needed.
         """
-        found_tweet = actions.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
         created_like = LikeConnector.objects.create(
@@ -264,7 +265,7 @@ class TweetLike(generics.GenericAPIView):
         If possible, delete tweet's like of the current user.
         Otherwise, we cannot perform request and return HTTP_406
         """
-        found_tweet = actions.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['pk'])
         found_like = self.check_if_exists(request, found_tweet)
         if not found_like:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -295,7 +296,7 @@ class TweetShare(generics.GenericAPIView):
         Need to be passed tweet's uuid in the url.
         No (post) data needed.
         """
-        found_tweet = actions.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_208_ALREADY_REPORTED)
         if request.user != found_tweet.user:
@@ -316,7 +317,7 @@ class TweetShare(generics.GenericAPIView):
         If possible, delete tweet's share of the current user.
         Otherwise, we cannot perform request and return HTTP_406
         """
-        found_tweet = actions.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['pk'])
         found_share = self.check_if_exists(request, found_tweet)
         if not found_share:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -360,7 +361,7 @@ class TweetsWithHashtag(generics.ListAPIView):
         If there is no tweets, we return HTTP_204.
         Pagination is on.
         """
-        hashtag_object = actions.get_hashtag(kwargs['value'])
+        hashtag_object = getters.get_hashtag(kwargs['value'])
         related_tweets = hashtag_object.tweets.all()
         if related_tweets:
             page = self.paginate_queryset(related_tweets)
