@@ -72,6 +72,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def num_of_followers(self):
         return len(self.followers.all())
 
+    @property
+    def num_of_tweets(self):
+        return len(self.tweets.all())
+
 
 class ContactConnector(models.Model):
     user_from = models.ForeignKey(User,
