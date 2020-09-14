@@ -20,6 +20,12 @@ class UserDetailByUuid(generics.RetrieveAPIView):
     def get_queryset(self):
         return models.User.objects.all()
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance,
+                                         context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class UserDetailByNickname(generics.RetrieveAPIView):
     serializer_class = serializer.UserSerializer
@@ -33,6 +39,12 @@ class UserDetailByNickname(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return models.User.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance,
+                                    context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CurrentUser(generics.RetrieveUpdateDestroyAPIView):
@@ -77,7 +89,7 @@ class FollowAPI(generics.GenericAPIView):
         user_from = request.user
         user_to = self.get_user(kwargs['pk'])
         if self.check_if_exists(user_from, user_to):
-            return Response(status=status.HTTP_208_ALREADY_REPORTED)
+            return Response(status=status.HTTP_409_CONFLICT)
         models.ContactConnector.objects.create(
             user_from=user_from,
             user_to=user_to

@@ -13,7 +13,7 @@ from tweet.models import Tweet, LikeConnector, ShareConnector
 from . import actions
 from . import getters
 from .tasks import create_related_hashtags
-from .create_response_algorithm import create_response_data
+from .newsfeed_response import create_response_data
 
 
 class NewsFeed(generics.GenericAPIView):
@@ -251,7 +251,7 @@ class TweetLike(generics.GenericAPIView):
         """
         found_tweet = getters.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
-            return Response(status=status.HTTP_208_ALREADY_REPORTED)
+            return Response(status=status.HTTP_409_CONFLICT)
         created_like = LikeConnector.objects.create(
             account=request.user,
             tweet=found_tweet
@@ -298,7 +298,7 @@ class TweetShare(generics.GenericAPIView):
         """
         found_tweet = getters.get_tweet(kwargs['pk'])
         if self.check_if_exists(request, found_tweet):
-            return Response(status=status.HTTP_208_ALREADY_REPORTED)
+            return Response(status=status.HTTP_409_CONFLICT)
         if request.user != found_tweet.user:
             created_share = ShareConnector.objects.create(
                 account=request.user,

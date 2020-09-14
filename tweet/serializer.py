@@ -14,7 +14,7 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
     liked_by_current_user = serializers.SerializerMethodField()
 
     def get_liked_by_current_user(self, obj):
-        if self.context['request'].user:
+        if not self.context['request'].user.is_anonymous:
             if self.context['request'].user in obj.likes.all():
                 return True
         return False
