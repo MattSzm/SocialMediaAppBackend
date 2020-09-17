@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserEditSerializer(serializers.ModelSerializer):
-
+    number_of_tweets = serializers.ReadOnlyField(source='num_of_tweets')
     number_following = serializers.ReadOnlyField(source='num_of_following')
     number_followers = serializers.ReadOnlyField(source='num_of_followers')
 
@@ -31,6 +31,7 @@ class UserEditSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'uuid', 'username',
                   'username_displayed', 'photo',
-                  'number_following', 'number_followers')
+                  'number_following', 'number_followers',
+                  'number_of_tweets')
         read_only_fields = ('username',)
 

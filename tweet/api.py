@@ -14,6 +14,7 @@ from . import actions
 from . import getters
 from .tasks import create_related_hashtags
 from .newsfeed_response import create_response_data
+from .searching import TweetSearchEngine
 
 
 class NewsFeed(generics.GenericAPIView):
@@ -329,9 +330,6 @@ class TweetSearch(generics.ListAPIView):
     serializer_class = serializer.TweetSerializer
     queryset = ''
 
-    def get_tweets(self, phrase):
-        return Tweet.objects.filter(content__icontains=phrase)
-
     def list(self, request, *args, **kwargs):
         """
         Get method returns all tweets with the given
@@ -340,7 +338,8 @@ class TweetSearch(generics.ListAPIView):
         If there is no tweets, we return HTTP_204.
         Pagination is on.
         """
-        found_tweets = self.get_tweets(kwargs['phrase'])
+        search_engine = TweetSearchEngine(kwargs['phrase'])
+        found_tweets = search_engine.get_tweets()
         if found_tweets:
             page = self.paginate_queryset(found_tweets)
             serializer = self.get_serializer(page, many=True,
