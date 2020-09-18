@@ -12,6 +12,8 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
     number_shares = serializers.ReadOnlyField(source='number_of_shares')
     number_comments = serializers.ReadOnlyField(source='number_of_comments')
     liked_by_current_user = serializers.SerializerMethodField()
+    shared_by_current_user = serializers.SerializerMethodField()
+    commented_by_current_user = serializers.SerializerMethodField()
 
     def get_liked_by_current_user(self, obj):
         if not self.context['request'].user.is_anonymous:
@@ -19,11 +21,24 @@ class TweetSerializer(serializers.HyperlinkedModelSerializer):
                 return True
         return False
 
+    def get_shared_by_current_user(self, obj):
+        if not self.context['request'].user.is_anonymous:
+            if self.context['request'].user in obj.shares.all():
+                return True
+        return False
+
+    def get_commented_by_current_user(self, obj):
+        if not self.context['request'].user.is_anonymous:
+            if self.context['request'].user in obj.comments.all():
+                return True
+        return False
+
     class Meta:
         model = Tweet
         fields = ('id', 'content', 'uuid', 'created', 'user', 'image',
                   'number_likes', 'number_shares', 'number_comments',
-                  'liked_by_current_user')
+                  'liked_by_current_user', 'shared_by_current_user',
+                  'commented_by_current_user')
 
 
 class ShareSerializer(serializers.HyperlinkedModelSerializer):
@@ -52,4 +67,5 @@ class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = CommentConnector
-        fields = ('id', 'comment_content', 'created', 'account')
+        fields = ('id', 'comment_content', 'image',
+                  'created', 'account')

@@ -77,6 +77,8 @@ class CommentConnector(models.Model):
                               related_name='comment_connector_tweet',
                               on_delete=models.CASCADE)
     comment_content = models.CharField(max_length=280, blank=False)
+    image = models.ImageField(upload_to='comments/',
+                              blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

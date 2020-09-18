@@ -123,7 +123,7 @@ class UserTweets(generics.ListAPIView):
         Need to be passed uuid of the user.
         Pagination is on.
         """
-        found_user = getters.get_user(kwargs['pk'])
+        found_user = getters.get_user(kwargs['uuid'])
         user_posts = found_user.tweets.all()
         user_shared_posts = found_user.share_connector_account.all()
 
@@ -143,6 +143,20 @@ class UserTweets(generics.ListAPIView):
                                             context={'request': request})
             return self.get_paginated_response(serializer.data)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TweetDetail(generics.RetrieveAPIView):
+    serializer_class = serializer.TweetSerializer
+    lookup_field = 'uuid'
+
+    def get_queryset(self):
+        return Tweet.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance,
+                                         context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CreateTweet(generics.CreateAPIView):
@@ -195,7 +209,7 @@ class TweetComments(generics.ListCreateAPIView):
         super(TweetComments, self).check_permissions(request)
 
     def dispatch(self, request, *args, **kwargs):
-        self.found_tweet = getters.get_tweet(kwargs['pk'])
+        self.found_tweet = getters.get_tweet(kwargs['uuid'])
         return super(TweetComments, self).dispatch(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
@@ -240,7 +254,8 @@ class TweetLike(generics.GenericAPIView):
             )
         except LikeConnector.DoesNotExist:
             return False
-        return result
+        else:
+            return result
 
     def post(self, request, *args, **kwargs):
         """
@@ -250,7 +265,7 @@ class TweetLike(generics.GenericAPIView):
         Need to be passed tweet's uuid in the url.
         No (post) data needed.
         """
-        found_tweet = getters.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['uuid'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_409_CONFLICT)
         created_like = LikeConnector.objects.create(
@@ -266,10 +281,10 @@ class TweetLike(generics.GenericAPIView):
         If possible, delete tweet's like of the current user.
         Otherwise, we cannot perform request and return HTTP_406
         """
-        found_tweet = getters.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['uuid'])
         found_like = self.check_if_exists(request, found_tweet)
         if not found_like:
-            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(status=status.HTTP_404_NOT_FOUND)
         found_like.delete()
         return Response(status=status.HTTP_200_OK)
 
@@ -286,7 +301,8 @@ class TweetShare(generics.GenericAPIView):
             )
         except ShareConnector.DoesNotExist:
             return False
-        return result
+        else:
+            return result
 
     def post(self, request, *args, **kwargs):
         """
@@ -297,7 +313,7 @@ class TweetShare(generics.GenericAPIView):
         Need to be passed tweet's uuid in the url.
         No (post) data needed.
         """
-        found_tweet = getters.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['uuid'])
         if self.check_if_exists(request, found_tweet):
             return Response(status=status.HTTP_409_CONFLICT)
         if request.user != found_tweet.user:
@@ -318,10 +334,10 @@ class TweetShare(generics.GenericAPIView):
         If possible, delete tweet's share of the current user.
         Otherwise, we cannot perform request and return HTTP_406
         """
-        found_tweet = getters.get_tweet(kwargs['pk'])
+        found_tweet = getters.get_tweet(kwargs['uuid'])
         found_share = self.check_if_exists(request, found_tweet)
         if not found_share:
-            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(status=status.HTTP_404_NOT_FOUND)
         found_share.delete()
         return Response(status=status.HTTP_200_OK)
 

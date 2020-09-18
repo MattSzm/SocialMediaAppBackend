@@ -76,7 +76,8 @@ class FollowAPI(generics.GenericAPIView):
             )
         except models.ContactConnector.DoesNotExist:
             return False
-        return result
+        else:
+            return result
 
     def post(self, request, *args, **kwargs):
         """
@@ -87,8 +88,9 @@ class FollowAPI(generics.GenericAPIView):
         No (post) data needed.
         """
         user_from = request.user
-        user_to = self.get_user(kwargs['pk'])
-        if self.check_if_exists(user_from, user_to):
+        user_to = self.get_user(kwargs['uuid'])
+        if (self.check_if_exists(user_from, user_to) or
+                user_from == user_to):
             return Response(status=status.HTTP_409_CONFLICT)
         models.ContactConnector.objects.create(
             user_from=user_from,
@@ -105,7 +107,7 @@ class FollowAPI(generics.GenericAPIView):
         server returns HTTP_406.
         """
         user_from = request.user
-        user_to = self.get_user(kwargs['pk'])
+        user_to = self.get_user(kwargs['uuid'])
         found_follow = self.check_if_exists(user_from, user_to)
         if not found_follow:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
