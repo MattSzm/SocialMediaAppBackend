@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from tweet import serializer
-from tweet.models import Tweet, LikeConnector, ShareConnector
+from tweet.models import Tweet, LikeConnector, ShareConnector, CommentConnector
 from . import actions
 from . import getters
 from .tasks import create_related_hashtags
@@ -241,6 +241,34 @@ class TweetComments(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(account=self.request.user,
                         tweet=self.found_tweet)
+
+
+class DestroyTweetComment(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def check_if_exists(self, request, found_tweet, comment_id):
+        try:
+            result = CommentConnector.objects.get(
+                account=request.user,
+                tweet=found_tweet,
+                id=comment_id
+            )
+        except CommentConnector.DoesNotExist:
+            return False
+        else:
+            return result
+
+    def delete(self, request, *args, **kwargs):
+        """
+            Destroys comment with a given uuid.
+        """
+        found_tweet = getters.get_tweet(kwargs['tweetuuid'])
+        found_comment = self.check_if_exists(request,
+                        found_tweet, kwargs['commentid'])
+        if not found_comment:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        found_comment.delete()
+        return Response(status=status.HTTP_200_OK)
 
 
 class TweetLike(generics.GenericAPIView):
