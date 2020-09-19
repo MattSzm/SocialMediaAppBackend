@@ -1,7 +1,7 @@
 from django.http import Http404
 
 from user.models import User
-from tweet.models import Tweet, Hashtag, CommentConnector
+from tweet.models import Tweet, Hashtag
 
 
 def get_user(uuid_user):

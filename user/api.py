@@ -1,4 +1,3 @@
-from django.http import Http404
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework.response import Response
@@ -7,6 +6,7 @@ from rest_framework import status
 
 from user import serializer
 from user import models
+from tweet.getters import get_user
 
 
 class UserDetailByUuid(generics.RetrieveAPIView):
@@ -62,12 +62,6 @@ class CurrentUser(generics.RetrieveUpdateDestroyAPIView):
 class FollowAPI(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get_user(self, uuid_user):
-        try:
-            return models.User.objects.get(uuid=uuid_user)
-        except models.User.DoesNotExist:
-            raise Http404
-
     def check_if_exists(self, user_from, user_to):
         try:
             result = models.ContactConnector.objects.get(
@@ -88,7 +82,7 @@ class FollowAPI(generics.GenericAPIView):
         No (post) data needed.
         """
         user_from = request.user
-        user_to = self.get_user(kwargs['uuid'])
+        user_to = get_user(kwargs['uuid'])
         if (self.check_if_exists(user_from, user_to) or
                 user_from == user_to):
             return Response(status=status.HTTP_409_CONFLICT)
@@ -107,12 +101,54 @@ class FollowAPI(generics.GenericAPIView):
         server returns HTTP_406.
         """
         user_from = request.user
-        user_to = self.get_user(kwargs['uuid'])
+        user_to = get_user(kwargs['uuid'])
         found_follow = self.check_if_exists(user_from, user_to)
         if not found_follow:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
         found_follow.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+class UserFollowing(generics.ListAPIView):
+    serializer_class = serializer.UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = ''
+
+    def list(self, request, *args, **kwargs):
+        """
+        Returns a list of users being followed by the user
+        whose uuid was passed as a parameter.
+        Client has to be authenticated.
+        """
+        found_user = get_user(kwargs['uuid'])
+        following_users = found_user.following.all()
+        if following_users:
+            page = self.paginate_queryset(following_users)
+            serializer = self.get_serializer(page, many=True,
+                                    context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserFollowers(generics.ListAPIView):
+    serializer_class = serializer.UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = ''
+
+    def list(self, request, *args, **kwargs):
+        """
+        Returns a list of users that follow the user
+        whose uuid was passed as a parameter.
+        Client has to be authenticated.
+        """
+        found_user = get_user(kwargs['uuid'])
+        following_users = found_user.followers.all()
+        if following_users:
+            page = self.paginate_queryset(following_users)
+            serializer = self.get_serializer(page, many=True,
+                                    context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserSearch(generics.ListAPIView):

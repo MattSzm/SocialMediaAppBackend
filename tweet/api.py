@@ -153,6 +153,9 @@ class TweetDetail(generics.RetrieveAPIView):
         return Tweet.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
+        """
+        Get method returns details of a single tweet.
+        """
         instance = self.get_object()
         serializer = self.get_serializer(instance,
                                          context={'request': request})
