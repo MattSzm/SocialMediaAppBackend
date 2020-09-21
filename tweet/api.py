@@ -386,7 +386,7 @@ class TweetSearch(generics.ListAPIView):
         Pagination is on.
         """
         search_engine = TweetSearchEngine(kwargs['phrase'])
-        found_tweets = search_engine.get_tweets()
+        found_tweets = search_engine.get_objects()
         if found_tweets:
             page = self.paginate_queryset(found_tweets)
             serializer = self.get_serializer(page, many=True,

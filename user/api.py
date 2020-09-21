@@ -7,6 +7,7 @@ from rest_framework import status
 from user import serializer
 from user import models
 from tweet.getters import get_user
+from tweet.searching import UserSearchEngine
 
 
 class UserDetailByUuid(generics.RetrieveAPIView):
@@ -166,10 +167,11 @@ class UserSearch(generics.ListAPIView):
              Get method returns all users with the given
              phrase in the username or username_displayed.
              Searching phrase should be passed in the url.
-             If there is no users, we return HTTP_204.
+             If there are no users, we return HTTP_204.
              Pagination is on.
         """
-        found_users = self.get_users(kwargs['phrase'], request.user)
+        search_engine = UserSearchEngine(kwargs['phrase'])
+        found_users = search_engine.get_objects()
         if found_users:
             page = self.paginate_queryset(found_users)
             serializer = self.get_serializer(page, many=True,
