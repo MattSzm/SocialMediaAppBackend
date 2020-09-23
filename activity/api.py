@@ -9,7 +9,9 @@ class RecentlyPopularUsers(ListAPIView):
     serializer_class = UserSerializer
     model = PopularUsers
     permission_classes = (permissions.IsAuthenticated,)
-
+    """
+    Endpoint returns most popular users of the last twelve hours.
+    """
     def get_queryset(self):
         popular_users_object = PopularUsers.load()
         return popular_users_object.users.all()

@@ -58,8 +58,17 @@ Personal project presenting back-end of the application based on twitter functio
   server asynchronously creates object of custom data structure 
   which simplifies the subsequent search.
   This solution reduce execution time.
-  Endpoint `withhashtag/<str:hashtag>/`.
+  Endpoint `api/tweet/withhashtag/<str:hashtag>/`.
   
+  ## Popularity system
+  Every twelve hours, the server with the help of celery asynchronously searches 
+  the last activities of users and 
+  finds those with the greatest increase in popularity.
+  After that, the data is saved in Singleton like model and 
+  served it to the client.
+  Endpoint `api/activity/popularusers/`.
+
+ 
   ## Pagination
   In order to reduce response size of list requests, there was used pagination. 
   It prevents from overloading.

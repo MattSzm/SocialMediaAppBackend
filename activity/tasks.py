@@ -6,7 +6,7 @@ from twitterclonebackend.celery import app
 from user.models import User, ContactConnector
 from .models import PopularUsers
 
-#todo: pass 4320(12 hours) in production
+#todo: pass 4320(12 hours) in production - 10sec for testing purpose
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(10.0,
@@ -29,6 +29,7 @@ def most_popular_users_during_the_day(hours_offset, amount_of_users):
 
     #todo: testing purpose, need to be deleted!
     if len(users_hashmap) < 3:
+        print('not performing')
         return
 
     popular_users_objects = PopularUsers.load()
