@@ -1,6 +1,6 @@
 from django.urls import path
 
-from tweet  import api
+from tweet import api
 
 
 app_name = 'tweet'

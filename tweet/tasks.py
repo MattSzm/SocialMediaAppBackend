@@ -1,6 +1,7 @@
 from twitterclonebackend.celery import app
 from tweet.models import Hashtag, HashtagConnector, Tweet
 
+
 @app.task
 def create_related_hashtags(tweet_id):
     tweet = Tweet.objects.get(id=tweet_id)
@@ -26,3 +27,4 @@ def create_hashtag_connector(hashtag, tweet):
         hashtag=hashtag,
         tweet=tweet
     )
+

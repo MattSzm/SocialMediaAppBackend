@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/user/', include('user.urls', namespace='user')),
     path('api/tweet/', include('tweet.urls', namespace='tweet')),
     path('api/auth/', include('auth.urls', namespace='auth')),
+    path('api/activity/', include('activity.urls', namespace='activity')),
     path('apischema/', schema_view.with_ui(
                 'redoc', cache_timeout=0), name='api_schema'),
     # path('admin/', admin.site.urls),

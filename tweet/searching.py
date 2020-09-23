@@ -30,6 +30,7 @@ class SearchEngine(ABC):
     def get_objects(self):
         pass
 
+    @abstractmethod
     def filter_objects(self, words):
         pass
 

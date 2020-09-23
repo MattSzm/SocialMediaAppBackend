@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'user.apps.UserConfig',
-    'tweet.apps.TweetConfig'
+    'tweet.apps.TweetConfig',
+    'activity'
 ]
 
 MIDDLEWARE = [
