@@ -51,7 +51,7 @@ Personal project presenting back-end of the application based on twitter functio
   which contain tweets of users they follow.
   Every request that needs permission has to contain token.
   Users can log in with both emails and usernames.
-  Client side should prevent from using '@' in the usernames.
+  App prevents from using '@' and white spaces in the usernames.
   
   ## Hashtag system
   Instead of searching through all posts to find the right ones with given #hashtag,

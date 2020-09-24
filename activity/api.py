@@ -9,6 +9,7 @@ class RecentlyPopularUsers(ListAPIView):
     serializer_class = UserSerializer
     model = PopularUsers
     permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = None
     """
     Endpoint returns most popular users of the last twelve hours.
     """

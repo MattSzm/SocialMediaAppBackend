@@ -42,9 +42,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if len(data['password']) < 6:
-            raise serializers.ValidationError("Password too short")
+            raise serializers.ValidationError("Password is too short")
         if ' ' in data['username']:
             raise serializers.ValidationError("Username cannot contain whitespaces")
+        if '@' in data['username']:
+            raise serializers.ValidationError("Username cannot contain '@'")
         if '@' not in data['email']:
             raise serializers.ValidationError("Invalid email")
         return data
