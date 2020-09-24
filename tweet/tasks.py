@@ -16,15 +16,16 @@ def create_related_hashtags(tweet_id):
                                     hashtag_value=word[1:])
                 create_hashtag_connector(new_hashtag, tweet)
 
+
 def try_to_find_hashtag(word):
     try:
         return Hashtag.objects.get(hashtag_value=word)
     except Hashtag.DoesNotExist:
         return False
 
+
 def create_hashtag_connector(hashtag, tweet):
     HashtagConnector.objects.create(
         hashtag=hashtag,
         tweet=tweet
     )
-

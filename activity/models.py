@@ -1,6 +1,7 @@
 from django.db import models
 
 from user.models import User
+from tweet.models import Hashtag
 
 class SingletonModel(models.Model):
 
@@ -23,3 +24,11 @@ class SingletonModel(models.Model):
 class PopularUsers(SingletonModel):
     users = models.ManyToManyField(User,
                    related_name='belongs_to_popular_users')
+
+
+class UserHashtagTrends(models.Model):
+    user = models.OneToOneField(User,
+                     related_name='hashtag_trends',
+                     on_delete=models.CASCADE)
+    hashtags = models.ManyToManyField(Hashtag,
+                    related_name='trends')

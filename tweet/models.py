@@ -106,3 +106,4 @@ class HashtagConnector(models.Model):
     hashtag = models.ForeignKey(Hashtag,
                                 related_name='hashtag_connector_hashtag',
                                 on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
