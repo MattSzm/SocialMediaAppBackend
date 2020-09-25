@@ -10,7 +10,7 @@ from tweet.models import Hashtag, HashtagConnector
 
 #todo: pass 4320(12 hours) in production - 10sec for testing purpose
 @app.on_after_finalize.connect
-def setup_periodic_tasks(sender):
+def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(10.0,
             most_popular_users_during_the_day.s(12, 3),
                 name='perform_most_popular_users')

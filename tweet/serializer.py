@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Tweet, CommentConnector, ShareConnector
+from .models import Tweet, CommentConnector, ShareConnector, Hashtag
 
 
 class TweetSerializer(serializers.HyperlinkedModelSerializer):
@@ -69,3 +69,9 @@ class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):
         model = CommentConnector
         fields = ('id', 'comment_content', 'image',
                   'created', 'account')
+
+
+class HashtagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hashtag
+        fields = ('hashtag_value',)
