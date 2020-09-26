@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from celery.schedules import crontab
 
 from twitterclonebackend.celery import app
 from user.models import User, ContactConnector
@@ -8,15 +9,16 @@ from .models import PopularUsers, UserHashtagTrends
 from tweet.models import Hashtag, HashtagConnector, Tweet
 
 
-#todo: pass 4320(12 hours) in production - 10sec for testing purpose
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(10.0,
+    sender.add_periodic_task(
+            crontab(hour="0,12"),
             most_popular_users_during_the_day.s(12, 3),
                 name='perform_most_popular_users')
 
-    sender.add_periodic_task(10.0,
-             create_user_hashtags_trends.s(48, 3),
+    sender.add_periodic_task(
+            crontab(hour="0,12"),
+            create_user_hashtags_trends.s(12, 3),
                 name='perform_hashtag_trends')
 
 
@@ -33,10 +35,10 @@ def most_popular_users_during_the_day(hours_offset, amount_of_users):
         else:
             users_hashmap[followed_user_uuid] = 1
 
-    #todo: testing purpose, need to be deleted!
-    if len(users_hashmap) < 3:
-        print('not performing')
-        return
+    # #todo: testing purpose, need to be deleted!
+    # if len(users_hashmap) < 3:
+    #     print('not performing')
+    #     return
 
     popular_users_objects = PopularUsers.load()
     popular_users_objects.users.clear()
