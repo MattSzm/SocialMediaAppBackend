@@ -5,7 +5,7 @@ from django.utils import timezone
 from twitterclonebackend.celery import app
 from user.models import User, ContactConnector
 from .models import PopularUsers, UserHashtagTrends
-from tweet.models import Hashtag, HashtagConnector
+from tweet.models import Hashtag, HashtagConnector, Tweet
 
 
 #todo: pass 4320(12 hours) in production - 10sec for testing purpose
@@ -16,7 +16,7 @@ def setup_periodic_tasks(sender, **kwargs):
                 name='perform_most_popular_users')
 
     sender.add_periodic_task(10.0,
-             create_user_hashtags_trends.s(12, 3),
+             create_user_hashtags_trends.s(48, 3),
                 name='perform_hashtag_trends')
 
 
@@ -62,6 +62,32 @@ def most_popular_users_during_the_day(hours_offset, amount_of_users):
 
 @app.task
 def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
+    def update_most_popular_tweet(single_trend):
+        def count_value(tweet):
+            return (tweet.number_of_likes + tweet.number_of_comments*1.2 +
+                        tweet.number_of_shares*1.5)
+
+
+        filtered_tweets = single_trend.tweets.filter(
+            created__gte=(timezone.now() - timedelta(
+                hours=hours_offset*3, minutes=0)))
+        if filtered_tweets:
+            most_popular = [filtered_tweets[0].uuid,
+                            count_value(filtered_tweets[0])]
+            for index in range(1, len(filtered_tweets)):
+                current_tweet_value = count_value(filtered_tweets[index])
+                if current_tweet_value > most_popular[1]:
+                    most_popular = [filtered_tweets[index].uuid,
+                                    current_tweet_value]
+            try:
+                most_popular_tweet = Tweet.objects.get(uuid=most_popular[0])
+            except Tweet.DoesNotExist:
+                pass
+            else:
+                single_trend.most_popular_tweet = most_popular_tweet
+                single_trend.save()
+
+
     def process_hashmap_results(input_hashmap):
         output_list = []
         for _ in range(amount_of_hashtags):
@@ -82,6 +108,7 @@ def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
                 del input_hashmap[hashtag_value_of_current_max]
         return output_list
 
+
     def create_default_trends():
         hashtag_connectors = HashtagConnector.objects.filter(
             created__gte=(timezone.now() - timedelta(
@@ -95,6 +122,7 @@ def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
             else:
                 hashtag_values_hashmap[hashtag_value] = 1
         return process_hashmap_results(hashtag_values_hashmap)
+
 
     def create_user_personal_trends(user):
         user_tweets = user.tweets.filter(
@@ -112,6 +140,9 @@ def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
 
 
     defaults = create_default_trends()
+    for default in defaults:
+        update_most_popular_tweet(default)
+
     for single_user in User.objects.all():
         personal_trends = create_user_personal_trends(single_user)
         try:
@@ -122,6 +153,9 @@ def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
                 user=single_user)
         user_hashtag_trends_object.hashtags.clear()
         for single_personal_trend in personal_trends:
+            if single_personal_trend.last_modify < (timezone.now() - timedelta(
+                    hours=hours_offset, minutes=0)):
+                update_most_popular_tweet(single_personal_trend)
             user_hashtag_trends_object.hashtags.add(single_personal_trend)
         for single_default_object in defaults:
             if len(user_hashtag_trends_object.hashtags.all()) == amount_of_hashtags:

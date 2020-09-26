@@ -94,9 +94,19 @@ class Hashtag(models.Model):
     tweets = models.ManyToManyField(Tweet,
                                     through='HashtagConnector',
                                     related_name='related_hashtags')
+    most_popular_tweet = models.ForeignKey(Tweet,
+                                  related_name='most_popular_hashtag',
+                                  on_delete=models.CASCADE,
+                                  blank=True,
+                                  null=True)
+    last_modify = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.hashtag_value
+
+    @property
+    def number_of_tweets(self):
+        return len(self.tweets.all())
 
 
 class HashtagConnector(models.Model):
@@ -107,3 +117,4 @@ class HashtagConnector(models.Model):
                                 related_name='hashtag_connector_hashtag',
                                 on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
+

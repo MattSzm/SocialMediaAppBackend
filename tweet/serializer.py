@@ -72,6 +72,9 @@ class TweetCommentSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class HashtagSerializer(serializers.ModelSerializer):
+    number_tweets = serializers.ReadOnlyField(source='number_of_tweets')
+    most_popular = TweetSerializer(source='most_popular_tweet')
+
     class Meta:
         model = Hashtag
-        fields = ('hashtag_value',)
+        fields = ('hashtag_value', 'number_tweets', 'most_popular')
