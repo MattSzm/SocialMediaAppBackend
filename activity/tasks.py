@@ -12,12 +12,12 @@ from tweet.models import Hashtag, HashtagConnector, Tweet
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-            crontab(hour="0,12"),
-            most_popular_users_during_the_day.s(12, 3),
+            crontab(hour="*/6"),
+            most_popular_users_during_the_day.s(12,3),
                 name='perform_most_popular_users')
 
     sender.add_periodic_task(
-            crontab(hour="0,12"),
+            crontab(hour="*/6"),
             create_user_hashtags_trends.s(12, 3),
                 name='perform_hashtag_trends')
 
@@ -155,8 +155,9 @@ def create_user_hashtags_trends(hours_offset, amount_of_hashtags):
                 user=single_user)
         user_hashtag_trends_object.hashtags.clear()
         for single_personal_trend in personal_trends:
-            if single_personal_trend.last_modify < (timezone.now() - timedelta(
-                    hours=hours_offset, minutes=0)):
+            if (not single_personal_trend.most_popular_tweet or
+                    single_personal_trend.last_modify < (timezone.now() -
+                     timedelta(hours=hours_offset, minutes=0))):
                 update_most_popular_tweet(single_personal_trend)
             user_hashtag_trends_object.hashtags.add(single_personal_trend)
         for single_default_object in defaults:

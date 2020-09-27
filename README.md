@@ -61,13 +61,15 @@ Personal project presenting back-end of the application based on twitter functio
   Endpoint `api/tweet/withhashtag/<str:hashtag>/`.
   
   ## Popularity system
-  Every twelve hours, the server with the help of celery asynchronously searches 
+  Every six hours, the server with the help of celery asynchronously searches 
   the last activities of users and 
-  finds those with the greatest increase in popularity.
+  finds those with the greatest increase in popularity(followers).
   After that, the data is saved in Singleton like model and 
   served it to the client.
   Endpoint `api/activity/popularusers/`.
-
+  ###
+  Endpoint `api/activity/hashtagtrends/` provides hashtags that may interest 
+  the current user and the most popular tweet connected with every hashtag.
  
   ## Pagination
   In order to reduce response size of list requests, there was used pagination. 
