@@ -81,8 +81,10 @@ Personal project presenting back-end of the application based on twitter functio
   
   ### Front-end side
   https://github.com/MattSzm/SocialMediaAppFrontend
-
-
+  
+  ### Presentation
+  https://youtu.be/OMUUU5xKF50
+  
  [restframeworklink]:https://www.django-rest-framework.org/
  [djangolink]:https://www.djangoproject.com/
  [celerylink]:https://docs.celeryproject.org/en/stable/
