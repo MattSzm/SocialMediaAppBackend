@@ -6,9 +6,9 @@ Personal project presenting back-end of the application based on twitter functio
  * [Django Rest Framework][restframeworklink]
  * [Celery][celerylink] (with [RabbitMQ][rabbitmqlink])
  
- ## Database I used:
+ ## Databases I used:
  * [PostgreSQL][postgreslink]
- * [AWS S3][awss3link] (user files)
+ * [AWS S3][awss3link] (User files)
  
  All additional extensions and packages can be found in 'requirements.txt'.
  
