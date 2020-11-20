@@ -8,6 +8,7 @@ Personal project presenting back-end of the application based on twitter functio
  
  ## Database I used:
  * [PostgreSQL][postgreslink]
+ * [AWS S3][awss3link] (user files)
  
  All additional extensions and packages can be found in 'requirements.txt'.
  
@@ -90,3 +91,4 @@ Personal project presenting back-end of the application based on twitter functio
  [celerylink]:https://docs.celeryproject.org/en/stable/
  [postgreslink]:https://www.postgresql.org/
  [rabbitmqlink]:https://www.rabbitmq.com/
+ [awss3link]:https://aws.amazon.com/s3/
