@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 import json
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
 with open('/home/mateusz/projects/twitterclonebackend/secrets.json') as file:
@@ -25,8 +25,6 @@ AUTH_USER_MODEL = 'user.User'
 ALLOWED_HOSTS = []
 
 
-# Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,6 +36,7 @@ INSTALLED_APPS = [
     'knox',
     'drf_yasg',
     'corsheaders',
+    'storages',
 
     'user.apps.UserConfig',
     'tweet.apps.TweetConfig',
@@ -126,12 +125,6 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
-
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -152,3 +145,22 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
 ]
+
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'mysite/static'),
+]
+
+AWS_ACCESS_KEY_ID = getSecret("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = getSecret("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = getSecret("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=3600',
+}
+AWS_LOCATION = 'static'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+
+DEFAULT_FILE_STORAGE = 'twitterclonebackend.storage_backends.MediaStorage'
