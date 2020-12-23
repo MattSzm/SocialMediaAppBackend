@@ -1,7 +1,7 @@
 venv
 templates
 .idea
-secrets.json
+twitterclonebackend/secrets.json
 db.sqlite3
 twitterclonebackend/templates
 __pycache__/

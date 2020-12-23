@@ -5,21 +5,8 @@ import json
 
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+SECRET_KEY = "YOUR_SECRET_KEY"
 
-with open('/home/mateusz/projects/twitterclonebackend/secrets.json') as file:
-    secretKeys = json.loads(file.read())
-
-def getSecret(setting, secretsKeys=secretKeys):
-    try:
-        return secretKeys[setting]
-    except KeyError:
-        message = f'Set the {setting} environment variable'
-        raise ImproperlyConfigured(message)
-
-
-SECRET_KEY = getSecret("SECRET_KEY")
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 AUTH_USER_MODEL = 'user.User'
 ALLOWED_HOSTS = []
@@ -82,10 +69,10 @@ WSGI_APPLICATION = 'twitterclonebackend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': getSecret("DATABASE_NAME"),
-        'USER': getSecret("DATABASE_USER"),
-        'PASSWORD': getSecret("DATABASE_PASSWORD"),
-        'HOST': 'localhost',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'postgres',
         'PORT': '5432'
     }
 }
@@ -132,7 +119,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES':[
         'knox.auth.TokenAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication'
 
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
@@ -151,9 +137,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'mysite/static'),
 ]
 
-AWS_ACCESS_KEY_ID = getSecret("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = getSecret("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = getSecret("AWS_STORAGE_BUCKET_NAME")
+AWS_ACCESS_KEY_ID = "YOUR_SECRET_KEY_ID"
+AWS_SECRET_ACCESS_KEY = "YOUR_SECRET_ACCESS_KEY"
+AWS_STORAGE_BUCKET_NAME = "YOUR_BUCKET_NAME"
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 
 AWS_S3_OBJECT_PARAMETERS = {
