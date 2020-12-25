@@ -15,4 +15,4 @@ RUN apk del .build-deps
 
 EXPOSE 8000
 
-CMD ["gunicorn", "mysite.wsgi", "0:8000"]
+CMD ["gunicorn", "twitterclonebackend.wsgi", "0:8000"]
